@@ -37,7 +37,7 @@ class ContinuumRobotEnv:
             print("physics server with GUI connected")
         else:
             self.physicsClient = p.connect(p.DIRECT)
-            print("physics server connected")
+            # print("physics server connected")
 
         p.setAdditionalSearchPath(pybullet_data.getDataPath())  # optionally
         # load plane and robot, and build obstacles
@@ -159,7 +159,7 @@ class ContinuumRobotEnv:
 
     def close(self):
         p.disconnect(self.physicsClient)
-        print('Environment close')
+        # print('Environment close')
 
     def random_move(self):
         random_pri = np.random.uniform(-0.5, 0.5, 1)
