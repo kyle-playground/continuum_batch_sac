@@ -7,3 +7,4 @@ for _ in range(10000):
     env.visualize_goal(env.goal)
     time.sleep(1/200.)
 
+
