@@ -5,11 +5,11 @@ import torch
 def argparser():
     parser = argparse.ArgumentParser(description='SAC-Batch-Env')
     # argument for random obstacles
-    parser.add_argument('--rand_obs', type=bool, default=True,
+    parser.add_argument('--rand_obs', type=bool, default=False,
                         help='randomize obstacles position (default: False)')
     # argument for numerous actor
     parser.add_argument('--n_actors', type=int, default=4,
-                        help='Number of pairs of actor and environment (default: 5)')
+                        help='Number of pairs of actor and environment (default: 4)')
     # arguments for sac
     parser.add_argument('--policy', default="Gaussian",
                         help='Policy Type: Gaussian | Deterministic (default: Gaussian)')
@@ -26,12 +26,12 @@ def argparser():
                                 term against the reward (default: 0.2)')
     parser.add_argument('--automatic_entropy_tuning', type=bool, default=True, metavar='G',
                         help='Automaically adjust α (default: False)')
-    parser.add_argument('--updates_per_step', type=int, default=5, metavar='N',
-                        help='model updates per simulator step (default: 1)')
+    parser.add_argument('--updates_per_collection', type=int, default=32, metavar='N',
+                        help='model updates per simulator step (default: 32)')
     parser.add_argument('--start_steps', type=int, default=10000, metavar='N',
                         help='Steps sampling random actions (default: 10000)')
     parser.add_argument('--target_update_interval', type=int, default=5, metavar='N',
-                        help='Value target update per no. of updates per step (default: 1)')
+                        help='Value target update per no. of updates per step (default: 5)')
     # argument for replay memory
     parser.add_argument('--seed', type=int, default=123456, metavar='N',
                         help='random seed (default: 123456)')
