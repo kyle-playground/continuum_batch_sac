@@ -15,6 +15,12 @@ class ReplayMemory:
         self.buffer[self.position] = (state, action, reward, next_state, done)
         self.position = (self.position + 1) % self.capacity
 
+    def push_batch(self, transitions_batch):
+        episode_length = len(transitions_batch)
+        for _ in range(episode_length):
+            transitions = transitions_batch.pop()
+            self.push(transitions)
+
     def sample(self, batch_size):
         batch = random.sample(self.buffer, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
