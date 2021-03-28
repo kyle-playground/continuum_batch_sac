@@ -1,0 +1,12 @@
+# intellij configs
+.idea/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# tensorboard
+runs
+
+# Ds store
+.DS_Store
