@@ -8,8 +8,8 @@ def argparser():
     parser.add_argument('--rand_obs', type=bool, default=False,
                         help='randomize obstacles position (default: False)')
     # argument for numerous actor
-    parser.add_argument('--n_actors', type=int, default=4,
-                        help='Number of pairs of actor and environment (default: 4)')
+    parser.add_argument('--n_envs', type=int, default=4,
+                        help='Number of environments (default: 4)')
     # arguments for sac
     parser.add_argument('--policy', default="Gaussian",
                         help='Policy Type: Gaussian | Deterministic (default: Gaussian)')
