@@ -97,8 +97,7 @@ def run():
             p.start()
             processes.append(p)
         for process in processes:
-            process.join(timeout=0.01)
-
+            process.join(timeout=0.01)  # Not sure why processes fail to join without timeout use timeout to skip
             transitions_batch = trans_queue.get()
             memory.push_batch(transitions_batch)
         del processes
