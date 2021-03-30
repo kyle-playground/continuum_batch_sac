@@ -8,7 +8,7 @@ import datetime
 from arguments import argparser
 from memory import ReplayMemory
 from multiprocessing import Value, Queue, Process
-
+from utils import hard_update
 
 args = argparser()
 
@@ -41,6 +41,7 @@ def bring_episode_exp(agent, rand_exploring, process_seed, total_numsteps, total
         state = next_state
 
         if done:
+            env.close()
             trans_queue.put(transitions_batch)
             with total_episode.get_lock():
                 total_episode.value += 1
@@ -68,6 +69,7 @@ def run():
         agent = SAC(state_dim, env, args, gpu=True)
     else:
         agent = SAC(state_dim, env, args)
+    agent_cpu = SAC(state_dim, env, args)
     env.close()
 
     # Memory
@@ -83,13 +85,13 @@ def run():
     while True:
         # get memory from multi env
         if total_numsteps.value > args.start_steps:
-            rand_exploring = True
+            rand_exploring = False
 
         # Arguments for child processes
         processes = []
         trans_queue = Queue()
-        agent_cpu = agent
-        agent_cpu.mv2cpu()
+        hard_update(agent_cpu.policy, agent.policy)
+
         # Send agent to Batch Environments and get batch exps
         for n in range(args.n_envs):
             p = Process(target=bring_episode_exp, args=(agent_cpu, rand_exploring, process_seeds[n],
@@ -101,11 +103,9 @@ def run():
             transitions_batch = trans_queue.get()
             memory.push_batch(transitions_batch)
         del processes
-        del agent_cpu
 
         if len(memory) > args.batch_size:
-            breakpoint()
-            for _ in range(args.updates_per_collection):
+            for _ in range(args.n_envs*8):
 
                 # Update parameters of all the networks
                 critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory,
