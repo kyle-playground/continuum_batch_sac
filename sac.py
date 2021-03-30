@@ -128,10 +128,6 @@ class SAC(object):
             if critic_path is not None:
                 self.critic.load_state_dict(torch.load(critic_path))
 
-    def mv2cpu(self):
-        self.device = torch.device("cpu")
-        self.policy.to(self.device)
-        self.critic.to(self.device)
-        self.critic_target.to(self.device)
+
 
 
