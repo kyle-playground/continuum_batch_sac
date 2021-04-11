@@ -6,8 +6,6 @@ from utils import soft_update, hard_update
 from model import GaussianPolicy, QNetwork
 
 
-
-
 class SAC(object):
     def __init__(self, num_inputs, env, args, gpu=False):
 
@@ -21,7 +19,7 @@ class SAC(object):
         self.automatic_entropy_tuning = args.automatic_entropy_tuning
 
         if gpu:
-            self.device = torch.device("cuda:0")
+                self.device = torch.device("cuda:1")
         else:
             self.device = torch.device("cpu")
 
