@@ -4,7 +4,6 @@ import torch
 from sac import SAC
 from memory import ReplayMemory
 from arguments import argparser
-
 from torch.utils.tensorboard import SummaryWriter
 import datetime
 
@@ -99,11 +98,11 @@ while True:
         Test_env = ContinuumRobotEnv(seed=total_episode, random_obstacle=True)
 
         for _ in range(episodes):
-
             test_episode_reward = 0.
             test_done = False
             test_state = Test_env.reset()
             info = "Go~~~"
+
             while not test_done:
                 test_action = agent.select_action(test_state, evaluate=True)
                 next_state, reward, test_done, info = Test_env.step(test_action)
@@ -126,8 +125,8 @@ while True:
         writer.add_scalar('Testing Avg reward', avg_reward, total_episode)
         writer.add_scalar('Success rate', num_success / 10, total_episode)
 
+agent.save_model("SAC_trained_in_{}_envs".format(args.n_envs))
 
-agent.save_model("SAC_trained_in_main_16_env")
 for n in range(args.n_envs):
     Envs[n].close()
 
