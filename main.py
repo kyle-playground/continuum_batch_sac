@@ -1,156 +1,100 @@
 from continuum_robot_env import ContinuumRobotEnv
 import numpy as np
-import os
+import itertools
 import torch
 from sac import SAC
+from memory import ReplayMemory
+from arguments import argparser
+from multiprocessing import Process, Queue
+from test import test_env
+from utils import hard_update
 from torch.utils.tensorboard import SummaryWriter
 import datetime
-from arguments import argparser
-from memory import ReplayMemory
-from multiprocessing import Value, Queue, Process
-from utils import hard_update
 
 args = argparser()
 
+# Environment
+env = ContinuumRobotEnv()
+env.reset()
 
-def bring_episode_exp(agent, rand_exploring, process_seed, total_numsteps, total_episode, trans_queue):
+torch.manual_seed(args.seed)
+np.random.seed(args.seed)
 
-    # create a agent for each process
-    env = ContinuumRobotEnv(seed=process_seed, random_obstacle=args.rand_obs)
+# Agent
+state_dim = env.observation_space()
+agent = SAC(state_dim, env, args, gpu=True)
+agent_cpu = SAC(state_dim, env, args)
+
+
+# Tesnorboard
+
+writer = SummaryWriter('runs/{}_SAC_{}_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), "1_env",
+                                   "autotune" if args.automatic_entropy_tuning else ""))
+
+# Memory
+memory = ReplayMemory(args.replay_size, args.seed)
+
+# Training Loop
+total_numsteps = 0
+updates = 0
+
+
+for i_episode in itertools.count(1):
+    episode_reward = 0
     episode_steps = 0
     done = False
     state = env.reset()
-    transitions_batch = []
 
     while not done:
-
-        if rand_exploring:
+        if args.start_steps > total_numsteps:
             action = env.random_move()  # Sample random action
         else:
-            action = agent.select_action(state)   # Sample action from policy
+            action = agent.select_action(state)  # Sample action from policy
+
+        if len(memory) > args.batch_size:
+            # Number of updates per step in environment
+            for i in range(args.updates_per_step):
+                # Update parameters of all the networks
+                critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory, args.batch_size, updates)
+
+                writer.add_scalar('loss/critic_1', critic_1_loss, updates)
+                writer.add_scalar('loss/critic_2', critic_2_loss, updates)
+                writer.add_scalar('loss/policy', policy_loss, updates)
+                writer.add_scalar('loss/entropy_loss', ent_loss, updates)
+                writer.add_scalar('entropy_temprature/alpha', alpha, updates)
+                updates += 1
 
         next_state, reward, done, info = env.step(action)  # Step
+
+        episode_steps += 1
+        total_numsteps += 1
+        episode_reward += reward
 
         # Ignore the "done" signal if it comes from hitting the time horizon.
         # (https://github.com/openai/spinningup/blob/master/spinup/algos/sac/sac.py)
         mask = 1 if episode_steps == env.MAX_STEP else float(not done)
-        transitions = [state, action, reward, next_state, mask]
 
-        transitions_batch.append(transitions)
-        episode_steps += 1
+        memory.push(state, action, reward, next_state, mask) # Append transition to memory
+
         state = next_state
 
-        if done:
-            env.close()
-            trans_queue.put(transitions_batch)
-            with total_episode.get_lock():
-                total_episode.value += 1
+    if total_numsteps > args.num_steps:
+        break
 
-            with total_numsteps.get_lock():
-                total_numsteps.value += episode_steps
-
-
-
-def run():
-    # writer
-    writer = SummaryWriter('runs/{}_SAC_{}envs'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
-                                                       "1" if not args.rand_obs else args.n_envs))
-    # set seeds
-    torch.manual_seed(args.seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(args.seed)
-    np.random.seed(args.seed)
-    process_seeds = [(i+1)*16 for i in range(args.n_envs)]
-
-    # Agent
-    env = ContinuumRobotEnv()
-    state_dim = env.observation_space()
-    if torch.cuda.is_available():
-        agent = SAC(state_dim, env, args, gpu=True)
-    else:
-        agent = SAC(state_dim, env, args)
-    agent_cpu = SAC(state_dim, env, args)
-    env.close()
-
-    # Memory
-    memory = ReplayMemory(args.replay_size, args.seed)
-
-    # Other variables for training process
-    total_numsteps = Value('i', 0)
-    total_episode = Value('i', 0)
-    test_num = 0
-    updates = 0
-    rand_exploring = True
-
-    while True:
-        # get memory from multi env
-        if total_numsteps.value > args.start_steps:
-            rand_exploring = False
-
-        # Arguments for child processes
-        processes = []
-        trans_queue = Queue()
+    if i_episode % 100 == 0 and args.eval is True:
         hard_update(agent_cpu.policy, agent.policy)
+        reward_queue = Queue(maxsize=1)
+        suc_queue = Queue(maxsize=1)
+        p = Process(target=test_env, args=(i_episode, total_numsteps, updates, agent_cpu, reward_queue, suc_queue))
+        p.start()
+        p.join()
+        avg_reward = reward_queue.get()
+        num_success = suc_queue.get()
 
-        # Send agent to Batch Environments and get batch exps
-        for n in range(args.n_envs):
-            p = Process(target=bring_episode_exp, args=(agent_cpu, rand_exploring, process_seeds[n],
-                                                            total_numsteps, total_episode, trans_queue))
-            p.start()
-            processes.append(p)
-        for process in processes:
-            process.join(timeout=0.01)  # Not sure why processes fail to join without timeout use timeout to skip
-            transitions_batch = trans_queue.get()
-            memory.push_batch(transitions_batch)
-        del processes
-
-        if len(memory) > args.batch_size:
-            for _ in range(args.n_envs*8):
-
-                # Update parameters of all the networks
-                critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory,
-                                                                                                     args.batch_size,
-                                                                                                     updates)
-                updates += 1
-
-        if total_numsteps.value > args.num_steps:
-            break
-
-        if total_episode.value - 100*(test_num+1) > 0 and args.eval is True:
-            test_num += 1
-            avg_reward = 0.
-            episodes = 10
-            num_success = 0
-            env = ContinuumRobotEnv(seed=total_episode.value, random_obstacle=True)
-
-            for _ in range(episodes):
-                episode_reward = 0.
-                done = False
-                state = env.reset()
-                info = "Go~~~"
-                while not done:
-                    action = agent.select_action(state, evaluate=True)
-                    next_state, reward, done, info = env.step(action)
-                    episode_reward += reward
-                    state = next_state
-                avg_reward += episode_reward
-
-                if info == "is success":
-                    num_success += 1
-
-            env.close()
-            avg_reward /= episodes
-
-            print("----------------------------------------")
-            print("num update: {}".format(updates))
-            print("Total Episodes: {}, Total num_steps: {}".format(total_episode.value, total_numsteps.value))
-            print("Test Episodes: {}, Avg. Reward: {}, Success rate: {}".format(episodes, round(avg_reward, 2), num_success/10))
-            print("----------------------------------------")
-            writer.add_scalar('Testing Avg reward', avg_reward, total_episode.value)
-            writer.add_scalar('Success rate', num_success/10, total_episode.value)
-
-    # agent.save_model("SAC_multiEnv")
+        writer.add_scalar('Testing Avg reward', avg_reward, i_episode)
+        writer.add_scalar('Success rate', num_success / 10, i_episode)
 
 
-if __name__ == '__main__':
-    run()
+agent.save_model("SAC_trained_with_1_env")
+env.close()
+
