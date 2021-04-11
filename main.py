@@ -1,3 +1,5 @@
+# SAC adapted from https://github.com/pranz24/pytorch-soft-actor-critic
+
 from continuum_robot_env import ContinuumRobotEnv
 import numpy as np
 import itertools
