@@ -14,11 +14,11 @@ args = argparser()
 Envs = []
 for n in range(args.n_envs):
     if n == 0:
-        CB_env = ContinuumRobotEnv()
+        CR_env = ContinuumRobotEnv()
     else:
-        CB_env = ContinuumRobotEnv(seed=16*n, random_obstacle=args.rand_obs)
-    CB_env.reset()
-    Envs.append(CB_env)
+        CR_env = ContinuumRobotEnv(seed=16*n, random_obstacle=args.rand_obs)
+    CR_env.reset()
+    Envs.append(CR_env)
 
 torch.manual_seed(args.seed)
 np.random.seed(args.seed)
