@@ -1,5 +1,5 @@
 # continuum_batch_sac
-main.py : Train with only one Env (obstacles are in default positions (figure below) ) <br />
+main.py : Train with only one Env (obstacles are in default positions (as figure shown below) ) <br />
 main_multi_env.py : Train with multiple Envs (obstacles are in default positions + noise) <br />
 <br />
 Task: <br />
