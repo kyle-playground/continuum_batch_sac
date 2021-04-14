@@ -33,11 +33,10 @@ class ContinuumRobotEnv:
         np.random.seed(seed)
 
         if activate_gui:
-            # self.physicsClient = p.connect(p.GUI)
-            print("physics server with GUI connected")
+            self.p_env = bc.BulletClient(connection_mode=pybullet.GUI)
+            # print("physics server with GUI connected")
         else:
             self.p_env = bc.BulletClient(connection_mode=pybullet.DIRECT)
-            # self.physicsClient = p.connect(p.DIRECT)
             # print("physics server connected")
 
         self.p_env.setAdditionalSearchPath(pybullet_data.getDataPath())  # optionally
