@@ -8,7 +8,7 @@ def argparser():
     parser.add_argument('--rand_obs', type=bool, default=True,
                         help='randomize obstacles position (default: True)')
     # argument for numerous actor
-    parser.add_argument('--n_envs', type=int, default=16,
+    parser.add_argument('--n_envs', type=int, default=32,
                         help='Number of environments (default: 16)')
     # arguments for sac
     parser.add_argument('--eval', type=bool, default=True,
@@ -22,8 +22,8 @@ def argparser():
     parser.add_argument('--alpha', type=float, default=0.2, metavar='G',
                         help='Temperature parameter α determines the relative importance of the entropy\
                                 term against the reward (default: 0.2)')
-    parser.add_argument('--automatic_entropy_tuning', type=bool, default=False, metavar='G',
-                        help='Automaically adjust α (default: False)')
+    parser.add_argument('--automatic_entropy_tuning', type=bool, default=True, metavar='G',
+                        help='Automaically adjust α (default: True)')
     parser.add_argument('--updates_per_collection', type=int, default=16, metavar='N',
                         help='model updates per simulator step (default: 16)')
     parser.add_argument('--updates_per_step', type=int, default=1, metavar='N',

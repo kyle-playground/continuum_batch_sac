@@ -59,11 +59,11 @@ for i_episode in itertools.count(1):
                 # Update parameters of all the networks
                 critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory, args.batch_size, updates)
 
-                writer.add_scalar('loss/critic_1', critic_1_loss, updates)
-                writer.add_scalar('loss/critic_2', critic_2_loss, updates)
-                writer.add_scalar('loss/policy', policy_loss, updates)
-                writer.add_scalar('loss/entropy_loss', ent_loss, updates)
-                writer.add_scalar('entropy_temprature/alpha', alpha, updates)
+                # writer.add_scalar('loss/critic_1', critic_1_loss, updates)
+                # writer.add_scalar('loss/critic_2', critic_2_loss, updates)
+                # writer.add_scalar('loss/policy', policy_loss, updates)
+                # writer.add_scalar('loss/entropy_loss', ent_loss, updates)
+                # writer.add_scalar('entropy_temprature/alpha', alpha, updates)
                 updates += 1
 
         next_state, reward, done, info = env.step(action)  # Step
@@ -75,27 +75,47 @@ for i_episode in itertools.count(1):
         # Ignore the "done" signal if it comes from hitting the time horizon.
         # (https://github.com/openai/spinningup/blob/master/spinup/algos/sac/sac.py)
         mask = 1 if episode_steps == env.MAX_STEP else float(not done)
-
-        memory.push(state, action, reward, next_state, mask) # Append transition to memory
+        transitions = [state, action, reward, next_state, mask]
+        memory.push(transitions) # Append transition to memory
 
         state = next_state
 
     if total_numsteps > args.num_steps:
         break
 
-    if i_episode % 100 == 0 and args.eval is True:
-        hard_update(agent_cpu.policy, agent.policy)
-        reward_queue = Queue(maxsize=1)
-        suc_queue = Queue(maxsize=1)
-        p = Process(target=test_env, args=(i_episode, total_numsteps, updates, agent_cpu, reward_queue, suc_queue))
-        p.start()
-        p.join()
-        avg_reward = reward_queue.get()
-        num_success = suc_queue.get()
+    if i_episode % 1 == 0 and args.eval is True:
+        avg_reward = 0.
+        episodes = 10
+        num_success = 0
+        Test_env = ContinuumRobotEnv(seed=i_episode, random_obstacle=True)
 
+        for _ in range(episodes):
+            test_episode_reward = 0.
+            test_done = False
+            test_state = Test_env.reset()
+            info = "Go~~~"
+
+            while not test_done:
+                test_action = agent.select_action(test_state, evaluate=True)
+                next_state, reward, test_done, info = Test_env.step(test_action)
+                test_episode_reward += reward
+                test_state = next_state
+            avg_reward += test_episode_reward
+
+            if info == "is success":
+                num_success += 1
+
+        Test_env.close()
+        avg_reward /= episodes
+
+        print("----------------------------------------")
+        print("num update: {}".format(updates))
+        print("Total Episodes: {}, Total num_steps: {}".format(i_episode, total_numsteps))
+        print("Test Episodes: {}, Avg. Reward: {}, Success rate: {}".format(episodes, round(avg_reward, 2),
+                                                                            num_success / 10))
+        print("----------------------------------------")
         writer.add_scalar('Testing Avg reward', avg_reward, i_episode)
         writer.add_scalar('Success rate', num_success / 10, i_episode)
-
 
 agent.save_model("SAC_trained_with_1_env")
 env.close()

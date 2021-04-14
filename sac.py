@@ -15,7 +15,7 @@ class SAC(object):
         self.alpha = args.alpha
         self.action_dim, self.action_high, self.action_low = env.action_space()
 
-        self.policy_type = args.policy
+        self.policy_type = "Gaussian"
         self.target_update_interval = args.target_update_interval
         self.automatic_entropy_tuning = args.automatic_entropy_tuning
 
