@@ -83,7 +83,7 @@ for i_episode in itertools.count(1):
     if total_numsteps > args.num_steps:
         break
 
-    if i_episode % 1 == 0 and args.eval is True:
+    if i_episode % 100 == 0 and args.eval is True:
         avg_reward = 0.
         episodes = 10
         num_success = 0
