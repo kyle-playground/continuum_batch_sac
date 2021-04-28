@@ -8,7 +8,7 @@ def argparser():
     parser.add_argument('--rand_obs', type=bool, default=True,
                         help='randomize obstacles position (default: True)')
     # argument for numerous actor
-    parser.add_argument('--n_envs', type=int, default=32,
+    parser.add_argument('--n_envs', type=int, default=16,
                         help='Number of environments (default: 16)')
     # arguments for sac
     parser.add_argument('--eval', type=bool, default=True,
@@ -37,7 +37,7 @@ def argparser():
                         help='random seed (default: 123456)')
     parser.add_argument('--batch_size', type=int, default=128, metavar='N',
                         help='batch size (default: 128)')
-    parser.add_argument('--num_steps', type=int, default=3000001, metavar='N',
+    parser.add_argument('--num_steps', type=int, default=3000000, metavar='N',
                         help='maximum number of steps (default: 3000000)')
     parser.add_argument('--replay_size', type=int, default=1000000, metavar='N',
                         help='size of replay buffer (default: 10000000)')
