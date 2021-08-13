@@ -1,6 +1,6 @@
 # continuum_batch_sac
 main.py : Train with only one Env (obstacles are in default positions (as figure shown below) ) <br />
-main_multi_env.py : Train with multiple Envs (obstacles are in default positions + noise) <br />
+main_multi_env.py : Train with multiple Envs (obstacles are in randompositon->default positions + noise) <br />
 <br />
 Task: <br />
 Control continuum robot to achieve goal without any collision <br />
