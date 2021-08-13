@@ -1,7 +1,9 @@
 # continuum_batch_sac
+TODO: obstacles should be constructed using slide joint instead of fixed joint.
+
 main.py : Train with only one Env (obstacles are in default positions (as figure shown below) ) <br />
 main_multi_env.py : Train with multiple Envs (obstacles are in random positons: default positions + noise) <br />
-!Warning: obstacles should be constructed using slide joint instead of fixed joint.
+
 <br />
 Task: <br />
 Control continuum robot to achieve goal without any collision <br />
