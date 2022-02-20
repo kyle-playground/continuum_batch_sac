@@ -1,4 +1,4 @@
-# continuum_batch_sac
+# continuum_sac
 TODO: obstacles should be constructed using slide joint instead of fixed joint.
 
 main.py : Train with only one Env (obstacles are in default positions (as figure shown below) ) <br />
